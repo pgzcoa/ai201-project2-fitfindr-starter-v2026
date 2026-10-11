@@ -78,8 +78,61 @@ def search_listings(
     Test it from a terminal before you move on:
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
-    # TODO: replace this with your implementation
-    return []
+    
+    import re
+
+    listings = load_listings()
+    keywords = set(re.findall(r"\b[a-z0-9]+\b", description.lower()))
+
+    if not keywords:
+        return []
+
+    scored_listings = []
+
+    for listing in listings:
+        # Filter by maximum price.
+        if max_price is not None and float(listing["price"]) > max_price:
+            continue
+
+        # Filter by size, matching complete size labels rather than substrings.
+        if size is not None:
+            requested_size = size.strip().casefold()
+            actual_size = str(listing.get("size", "")).casefold().strip()
+
+            size_options = [
+                part.strip() for part in actual_size.split("/")
+            ]
+
+            if requested_size != actual_size and requested_size not in size_options:
+                continue
+
+        # Search across useful listing fields.
+        searchable_text = " ".join(
+            [
+                str(listing.get("title", "")),
+                str(listing.get("description", "")),
+                str(listing.get("category", "")),
+                " ".join(listing.get("style_tags", [])),
+                " ".join(listing.get("colors", [])),
+                str(listing.get("brand") or ""),
+            ]
+        ).lower()
+
+        listing_words = set(re.findall(r"\b[a-z0-9]+\b", searchable_text))
+        score = len(keywords & listing_words)
+
+        # Discard listings with no matching keywords.
+        if score > 0:
+            scored_listings.append((score, listing))
+
+    # Highest keyword overlap first.
+    scored_listings.sort(key=lambda item: item[0], reverse=True)
+
+    return [
+        listing
+        for score, listing in scored_listings[:config.SEARCH_RESULT_LIMIT]
+    ]
+
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
@@ -112,8 +165,46 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
-    # TODO: replace this with your implementation
-    return ""
+
+    wardrobe_items = wardrobe.get("items", [])
+
+    item_details = (
+        f"Item: {new_item.get('title', 'Unknown item')}\n"
+        f"Description: {new_item.get('description', '')}\n"
+        f"Category: {new_item.get('category', '')}\n"
+        f"Colors: {', '.join(new_item.get('colors', []))}\n"
+        f"Price: ${new_item.get('price', 'Unknown')}"
+    )
+
+    if not wardrobe_items:
+        prompt = (
+            "You are a helpful personal stylist. Give 1-2 practical outfit "
+            "ideas for the following item. The user has not provided any "
+            "wardrobe items, so suggest general pieces they could pair with it. "
+            "Keep the advice specific to the item's style and colors.\n\n"
+            f"{item_details}"
+        )
+    else:
+        wardrobe_text = "\n".join(
+            f"- {item.get('title', 'Unnamed item')}: "
+            f"{item.get('description', '')}"
+            for item in wardrobe_items
+        )
+
+        prompt = (
+            "You are a helpful personal stylist. Suggest 1-2 outfits using "
+            "the new item and pieces from the user's existing wardrobe. "
+            "Name the wardrobe pieces you recommend. Keep the suggestions "
+            "practical and specific.\n\n"
+            f"{item_details}\n\n"
+            f"User's wardrobe:\n{wardrobe_text}"
+        )
+
+    response = generate(prompt)
+    return response.strip() if response and response.strip() else (
+        "Try pairing this item with neutral basics and shoes that complement "
+        "its colors and style."
+    )
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -152,5 +243,38 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    
+
+
+    if not outfit or not outfit.strip():
+        return (
+            f"{new_item.get('title', 'This item')} is a versatile find. "
+            f"It costs ${new_item.get('price', 'an unknown amount')} "
+            f"and is listed on {new_item.get('platform', 'the resale platform')}. "
+            "Style it with complementary pieces for a look that feels uniquely you."
+        )
+
+    prompt = (
+        "Write a social media caption about this secondhand fashion find. "
+        "Write 2-4 sentences in a natural, engaging voice. Mention the item's "
+        "name, price, and platform exactly once each. Describe the vibe and "
+        "use the outfit suggestion to make the caption specific. "
+        "Return only the caption, without a heading or bullet points.\n\n"
+        f"Item: {new_item.get('title', 'Unknown item')}\n"
+        f"Price: ${new_item.get('price', 'Unknown')}\n"
+        f"Platform: {new_item.get('platform', 'Unknown')}\n"
+        f"Description: {new_item.get('description', '')}\n"
+        f"Colors: {', '.join(new_item.get('colors', []))}\n"
+        f"Outfit suggestion:\n{outfit}"
+    )
+
+    response = generate(prompt)
+    if response and response.strip():
+        return response.strip()
+
+    return (
+        f"Found: {new_item.get('title', 'a unique fashion item')}! "
+        f"Listed for ${new_item.get('price', 'an unknown amount')} on "
+        f"{new_item.get('platform', 'a resale platform')}, this find brings "
+        "an effortlessly stylish vibe to your wardrobe."
+    )

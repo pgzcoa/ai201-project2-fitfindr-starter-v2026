@@ -159,6 +159,71 @@ $ python -c "from tools import create_fit_card; ..."
 
 ---
 
+**One full query** The full query will be documented after the tools are connected through the planning loop in agent.py and the end-to-end query has been tested.
+
+```
+$ python app.py ask '...'
+
+```
+**The three tools, tested one at a time**
+
+**1. `search_listings` — matching search**
+
+Command:
+```powershell
+python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
+```
+
+Output: Returned matching listing dictionaries within the $30 price limit.
+
+**Empty search test**
+
+Command:
+```powershell
+python -c "from tools import search_listings; print(search_listings('zzznomatchitem123'))"
+```
+
+Output:
+```text
+[]
+```
+
+**2. `suggest_outfit` — outfit suggestions**
+
+Command:
+```powershell
+python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+```
+
+Output: Returned outfit suggestions for the selected vintage Levi's 501 jeans.
+
+**Empty wardrobe test**
+
+Command:
+```powershell
+python -c "from tools import suggest_outfit; from utils.data_loader import load_listings; print(suggest_outfit(load_listings()[0], {'items': []}))"
+```
+
+Output: Returned general styling advice without an error.
+
+**3. `create_fit_card` — caption generation**
+
+Command:
+```powershell
+python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
+```
+
+Output: Generated a social media caption mentioning the vintage Levi's 501 jeans, $38.0 price, Depop platform, and styling vibe.
+
+**Empty outfit test**
+
+Command:
+```powershell
+python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('   ', load_listings()[0]))"
+```
+
+Output: Returned a descriptive message containing the item name, price, and platform.
+
 ## How I Used AI
 
 <!-- Two specific moments. What you asked, what came back, what you changed.
