@@ -24,10 +24,11 @@ data earns credit; *"80% seemed reasonable"* does not.
 Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
-**Why this target:**
+**Why this target:** I chose 4 out of 5 because keyword-based searching may miss some valid listings when users describe the same item using different words.  Requiring all 5 successful tries may be too strict for a search based on keyword overlap.
 <!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
      "my search is a plain keyword match and some phrasings will miss" is a
      real answer. -->
+
 
 ---
 
@@ -36,13 +37,13 @@ tool calls and returns a fit card — in at least 4 of 5 tries.
 Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
-**Why this target:**
+**Why this target:** I chose 5 out of 5 because the empty-search branch should follow a predictable rule.  When no listing is found, the agent should stop instead of passing a nonexistent item to the next tool.
 <!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
      about this path? -->
 
 ---
 
-## 3. Something about state
+## 3. The selected item stays consistent between tools
 
 <!-- YOU WRITE THIS ONE.
 
@@ -54,15 +55,18 @@ Given a query that matches no listings, the agent stops before calling
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
 
+     In 5 out of 5 tests, the ID of the item stored in session["selected_item"] matches the ID of the item passed to suggest_outfit.
 
 
-**Why this target:**
+
+
+**Why this target:** I chose 5 out of 5 because the agent should pass the correct item to the next tool every time.  If the IDs do not match, the outfit suggestion could be based on a different item than the one found by the search.
 
 
 
 ---
 
-## 4. Something about the fit card
+## 4. The fit card contains the required information
 
 <!-- YOU WRITE THIS ONE.
 
@@ -75,15 +79,17 @@ Given a query that matches no listings, the agent stops before calling
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
 
+     In at least 4 out of 5 tests, the generated fit card contains 2 -4 sentences and mentions the selected item's name, price, and platform.
 
 
-**Why this target:**
+
+**Why this target:**  I chose 4 out of 5 because a language model may produce different wording each time.  However, the caption should still include the required information and be short enough to use a social media post.
 
 
 
 ---
 
-## 5. Your choice
+## 5. Search results respect the maximum price
 
 <!-- YOU WRITE THIS ONE TOO.
 
@@ -91,10 +97,11 @@ Given a query that matches no listings, the agent stops before calling
      wardrobe path, what happens when the model can't be reached, whether the
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
+     
+     In 5 out of 5 tests, every listing returned for a search with a maximum price has a price less than or equal to the user's specified limit.
 
 
-
-**Why this target:**
+**Why this target:** I chose 5 out of 5 because the maximum price is a clear requirement that can be checked by comparing each listing's price with the user's budget.  Returning an item above the limit would violate the user's request.
 
 
 
