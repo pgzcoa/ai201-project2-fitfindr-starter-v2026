@@ -57,6 +57,29 @@
      on, and if you don't decide it here you'll discover it as a crash in
      Milestone 5. -->
 
+      
+
+ 1. `search_listings`
+
+- **What it does:** Searches thrift listings for items matching a description, with optional size and maximum-price filters, and ranks matches by keyword overlap.
+- **Inputs:** `description` (`str`, required); `size` (`str | None`, optional); `max_price` (`float | None`, optional).
+- **Return value:** A list of up to `config.SEARCH_RESULT_LIMIT` listing dictionaries, ordered by relevance. Each dictionary contains `id`, `title`, `description`, `category`, `style_tags` (list), `size`, `condition`, `price` (float), `colors` (list), `brand` (`str | None`), and `platform`.
+- **Empty-case behavior:** Returns an empty list (`[]`) when no listings match. Size matching must be case-insensitive and avoid incorrect partial matches, such as matching `"s"` to `"us 9"` or `"l"` to `"xl"`.
+
+ 2. `suggest_outfit`
+
+- **What it does:** Uses the language model to suggest one or two outfits featuring a selected thrift item and, when available, items from the user's wardrobe.
+- **Inputs:** `new_item` (`dict`, required; a listing dictionary); `wardrobe` (`dict`, required; contains an `items` key with a list of wardrobe items).
+- **Return value:** A non-empty string (`str`) containing outfit suggestions, ideally naming specific pieces from the user's wardrobe when available.
+- **Empty-case behavior:** If `wardrobe["items"]` is empty, returns general styling advice for the selected item instead of raising an error or returning an empty string.
+
+ 3. `create_fit_card`
+
+- **What it does:** Uses the language model to create a social-media caption describing the thrift find and its outfit styling.
+- **Inputs:** `outfit` (`str`, required; the outfit suggestion); `new_item` (`dict`, required; the listing dictionary).
+- **Return value:** A string (`str`) containing a two-to-four-sentence caption that mentions the item, its price, and its platform once each and describes the outfit's vibe.
+- **Empty-case behavior:** If `outfit` is empty or contains only whitespace, returns a descriptive message instead of raising an error.
+
 ### `search_listings`
 
 - **What it does:**
@@ -93,14 +116,14 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:**  If search_listings returns an empty list ([]), set session["error"] to a helpful message explaining how the user can adjust their search, then return the session without calling suggest_outfit or create_fit_card. Otherwise, store the first result in session["selected_item"], call suggest_outfit, and then call create_fit_card.
 
-**Where it lives:** `agent.py::run_agent`
+**Where it lives:** `agent.py::run_agent` 
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** Query parsing is not implemented yet. The planned implementation will extract a description, size, and maximum price from the user's natural-language query and store them in session["parsed"]. The parsing method will be documented once selected and implemented.
 
-**What moves through the session:** <!-- which fields, in what order -->
-
+**What moves through the session:** The user's request, the search results, the selected listing, the outfit suggestions, and the generated fit-card caption, in that order. 
+query → parsed → search_results → selected_item → outfit_suggestion → fit_card. The session also stores wardrobe and error.
 ---
 
 ## Sample Run
