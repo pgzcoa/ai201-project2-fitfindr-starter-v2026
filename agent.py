@@ -15,6 +15,7 @@ Build and test your three tools in `tools.py` first. Then come here.
 
 import config
 import trace
+import re
 from tools import search_listings, suggest_outfit, create_fit_card
 from generate import ModelUnavailable
 
@@ -106,10 +107,91 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         than a stack trace. The import is already at the top of this file.
     """
     session = new_session(query, wardrobe)
+    
+    # Parse the user's query.
+    size_match = re.search(
+        r"\bsize\s+([A-Za-z0-9]+(?:/[A-Za-z0-9]+)*)",
+        query,
+        re.IGNORECASE,
+    )
+    price_match = re.search(
+        r"\b(?:under|below|less than)\s*\$?\s*(\d+(?:\.\d+)?)",
+        query,
+        re.IGNORECASE,
+    )
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    size = size_match.group(1) if size_match else None
+    max_price = float(price_match.group(1)) if price_match else None
+
+    description = query
+    description = re.sub(
+        r"\bsize\s+[A-Za-z0-9]+(?:/[A-Za-z0-9]+)*",
+        "",
+        description,
+        flags=re.IGNORECASE,
+    )
+    description = re.sub(
+        r"\b(?:under|below|less than)\s*\$?\s*\d+(?:\.\d+)?",
+        "",
+        description,
+        flags=re.IGNORECASE,
+    )
+    description = re.sub(
+        r"\b(looking for|find me|find|search for|please)\b",
+        "",
+        description,
+        flags=re.IGNORECASE,
+    )
+    description = " ".join(description.split()).strip()
+
+    session["parsed"] = {
+        "description": description,
+        "size": size,
+        "max_price": max_price,
+    }
+
+    # Search for listings and store the result in the session.
+    trace.check_iterations(1)
+    parsed = session["parsed"]
+    session["search_results"] = search_listings(
+        parsed["description"],
+        parsed["size"],
+        parsed["max_price"],
+    )
+
+    # Branch: stop early when no listings match.
+    if not session["search_results"]:
+        changes = []
+        if size:
+            changes.append("try a different size")
+        if max_price is not None:
+            changes.append("increase your maximum price")
+        changes.append("use different or broader search terms")
+
+        session["error"] = (
+            "No matching listings were found. You could "
+            + ", ".join(changes)
+            + "."
+        )
+        return session
+
+    # Continue through the remaining tools on the happy path.
+    session["selected_item"] = session["search_results"][0]
+
+    trace.check_iterations(2)
+    session["outfit_suggestion"] = suggest_outfit(
+        session["selected_item"],
+        session["wardrobe"],
+    )
+
+    trace.check_iterations(3)
+    session["fit_card"] = create_fit_card(
+        session["outfit_suggestion"],
+        session["selected_item"],
+    )
+
     return session
+
 
 
 # ── running it directly ───────────────────────────────────────────────────────
