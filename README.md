@@ -241,6 +241,8 @@ that produced it:
 
      `python app.py ask '...' --trace` once you've added the trace.step()
      calls in Milestone 2.
+     
+   python app.py ask 'looking for a vintage graphic tee under $30' --trace
 
      Worth pasting BOTH the happy path and the empty-search path. The empty
      one should be visibly shorter, because it stops. If your two traces are
@@ -249,20 +251,56 @@ that produced it:
 
 **Happy path**
 
-```
+``` search_listings (via MCP)
+    in:  dict with keys: description, size, max_price
+    out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Mesh Long-Sleeve Top — Black … +7 more
 
-```
+ ```suggest_outfit
+    in:  dict with keys: selected_item, wardrobe
+    out: It looks like your wardrobe items didn't come through with specific descriptions! [The output continued with two outfit suggestions.]
+
+ ```create_fit_card
+    in:  dict with keys: outfit_suggestion, selected_item
+    out: Scored this super cute Y2K Baby Tee with Butterfly Print on depop for just $18.0! [The output continued with the fit-card description.]
+
+
+
+
 
 **Empty search**
 
 ```
 
 ```
+### Failure Tests
+
+**1. Empty search**
+
+Command:
+
+```powershell
+python app.py ask 'designer ballgown size XXS under $5'
+```
+
+Result:  that no matching listings were found 
+
+**2. Empty wardrobe**
+
+Command:
+
+```powershell
+python app.py ask 'looking for a vintage graphic tee under $30' --empty-wardrobe
+```
+
+Result: returned outfit suggestions using versatile clothing basics. It did not crash or return an empty response.
+
 
 **On the MCP move:** <!-- what changed in your code, and whether anything
 behaved differently afterwards. If the rewire didn't work, say exactly where it
 broke — the error text and the last thing that worked. That earns the point in
-full. -->
+full. 
+
+I changed `agent.py` so that it searches for clothing listings through MCP instead of calling the search function directly. I added `search_listings` to `mcp_server.py` and made sure it accepts a clothing description, with size and maximum price as optional filters. After making these changes, I tested the search and confirmed that it still found matching items. The agent then used the results to suggest outfits and create a fit card. I also tested a search with no matching items and confirmed that the agent stopped and explained what I could change in my search.
 
 
 
