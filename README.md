@@ -53,134 +53,41 @@ The agent stores each tool's result in the session dictionary before using that 
 
 When a search returns no matches, the agent suggests trying a different size, increasing the maximum price, or using different or broader search terms.
 
-## How I Used AI
-
-I used AI assistance to help implement, troubleshoot, and test the FitFindr tools and planning loop. I reviewed the generated code and ran commands in my local Python environment to check its behavior.
-
-**Moment 1 — Listing search and filtering:** I asked for help implementing `search_listings` so it could find relevant clothing listings and apply size and price filters. I tested a query for a graphic tee under $30 and an intentionally impossible search. I checked that the first query returned matching listings and the impossible query returned an empty list. I also refined the size matching logic to avoid treating similar size strings, such as `S` and `US 9`, as equivalent.
-
-**Moment 2 — Agent branching and session state:** I asked for help connecting the three tools in `agent.py::run_agent` and handling searches with no results. The initial placeholder stopped both test queries before the tools ran. I replaced it with query parsing, session-state updates, and a branch that returns a helpful message when the search results are empty. I then ran the agent again to verify that an unsuccessful search left `session["fit_card"]` as `None` and explained what the user could try next.
-
-I used terminal tests to check the behavior of the implementation and committed and pushed my changes to my GitHub fork.
-
-
-
-
----
-
 ## Tool Inventory
-
-<!-- Four lines per tool. This is worth 2 points and it's the single most
-     common place students lose them.
-
-     "Returns a list" earns NOTHING. The description has to say what is IN
-     the list.
-
-     The empty case isn't optional either — it's the thing your loop branches
-     on, and if you don't decide it here you'll discover it as a crash in
-     Milestone 5. -->
-
-      
-
- 1. `search_listings`
+ ### search_listings
 
 - **What it does:** Searches thrift listings for items matching a description, with optional size and maximum-price filters, and ranks matches by keyword overlap.
 - **Inputs:** `description` (`str`, required); `size` (`str | None`, optional); `max_price` (`float | None`, optional).
 - **Return value:** A list of up to `config.SEARCH_RESULT_LIMIT` listing dictionaries, ordered by relevance. Each dictionary contains `id`, `title`, `description`, `category`, `style_tags` (list), `size`, `condition`, `price` (float), `colors` (list), `brand` (`str | None`), and `platform`.
 - **Empty-case behavior:** Returns an empty list (`[]`) when no listings match. Size matching must be case-insensitive and avoid incorrect partial matches, such as matching `"s"` to `"us 9"` or `"l"` to `"xl"`.
 
- 2. `suggest_outfit`
+ ### suggest_outfit
 
 - **What it does:** Uses the language model to suggest one or two outfits featuring a selected thrift item and, when available, items from the user's wardrobe.
 - **Inputs:** `new_item` (`dict`, required; a listing dictionary); `wardrobe` (`dict`, required; contains an `items` key with a list of wardrobe items).
 - **Return value:** A non-empty string (`str`) containing outfit suggestions, ideally naming specific pieces from the user's wardrobe when available.
 - **Empty-case behavior:** If `wardrobe["items"]` is empty, returns general styling advice for the selected item instead of raising an error or returning an empty string.
 
- 3. `create_fit_card`
+ ### create_fit_card
 
 - **What it does:** Uses the language model to create a social-media caption describing the thrift find and its outfit styling.
 - **Inputs:** `outfit` (`str`, required; the outfit suggestion); `new_item` (`dict`, required; the listing dictionary).
 - **Return value:** A string (`str`) containing a two-to-four-sentence caption that mentions the item, its price, and its platform once each and describes the outfit's vibe.
 - **Empty-case behavior:** If `outfit` is empty or contains only whitespace, returns a descriptive message instead of raising an error.
 
-### `search_listings`
-
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
-
-### `suggest_outfit`
-
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
-
-### `create_fit_card`
-
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
-
----
-
 ## Planning Loop
-
-<!-- Your branch rule, stated as a rule — the condition AND both paths — plus
-     the file and function that holds it.
-
-     Like this:
-       "If search_listings returns an empty list, put a message in the session
-        and stop. Otherwise take the first result and go to suggest_outfit."
-        — agent.py::run_agent
-
-     The grader checks your code against what you claim here, so the file and
-     function have to be real. -->
 
 **Branch rule:**  If search_listings returns an empty list ([]), set session["error"] to a helpful message explaining how the user can adjust their search, then return the session without calling suggest_outfit or create_fit_card. Otherwise, store the first result in session["selected_item"], call suggest_outfit, and then call create_fit_card.
 
 **Where it lives:** `agent.py::run_agent` 
 
-**How the query is parsed:** Query parsing is not implemented yet. The planned implementation will extract a description, size, and maximum price from the user's natural-language query and store them in session["parsed"]. The parsing method will be documented once selected and implemented.
+**How the query is parsed:** Query parsing is implemented. The implementation will extract a description, size, and maximum price from the user's natural-language query and store them in session["parsed"]. The parsing method will be documented once selected and implemented.
 
 **What moves through the session:** The user's request, the search results, the selected listing, the outfit suggestions, and the generated fit-card caption, in that order. 
 query → parsed → search_results → selected_item → outfit_suggestion → fit_card. The session also stores wardrobe and error.
 ---
 
 ## Sample Run
-
-<!-- Two things go here.
-
-     1. One FULL query and its output, pasted as text.
-     2. Your three per-tool terminal tests — the command and what it printed. -->
-
-**One full query**
-
-```
-$ python app.py ask '...'
-
-```
-
-**The three tools, tested one at a time**
-
-```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
-
-```
-
-```
-$ python -c "from tools import suggest_outfit; ..."
-
-```
-
-```
-$ python -c "from tools import create_fit_card; ..."
-
-```
-
----
 
 **One full query** The full query will be documented after the tools are connected through the planning loop in agent.py and the end-to-end query has been tested.
 
@@ -249,24 +156,17 @@ Output: Returned a descriptive message containing the item name, price, and plat
 
 ## How I Used AI
 
-<!-- Two specific moments. What you asked, what came back, what you changed.
+**Moment 1** Implement search_listings
 
-     "I used Claude to help me code" is not enough.
+- *What I asked for:* I asked AI to help implement search_listings so it could search clothing listings.
+- *What came back:* AI suggested a keyword-matching approach that searched the listing data and applied optional size and price filters.
+- *What I changed:* I verified that searches with no matching listings returned an empty list ([]) instead of failing. I also tested the price and size filters to make sure the results matched the user's requirements and did not include items outside the specified budget or incorrect size matches. 
 
-     "I gave Claude my search_listings spec. It returned None on no match
-     instead of an empty list, so I changed it" is the level we want. -->
+**Moment 2** Parsing User Queries
 
-**Moment 1**
-
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
-
-**Moment 2**
-
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* help extract the size and budget from a user's search
+- *What came back:* using regular expressions to identify size and price limits
+- *What I changed:* added query parsing so the agent could search using the user's size and budget requirements
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
