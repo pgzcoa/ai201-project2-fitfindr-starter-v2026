@@ -153,11 +153,14 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # Search for listings and store the result in the session.
     trace.check_iterations(1)
     parsed = session["parsed"]
-    session["search_results"] = search_listings(
-        parsed["description"],
-        parsed["size"],
-        parsed["max_price"],
-    )
+
+    from mcp_client import call_tool
+
+    session["search_results"] = call_tool("search_listings", {
+        "description": parsed["description"],
+        "size": parsed["size"],
+        "max_price": parsed["max_price"],
+    })
 
     # Branch: stop early when no listings match.
     if not session["search_results"]:
@@ -182,8 +185,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     session["outfit_suggestion"] = suggest_outfit(
         session["selected_item"],
         session["wardrobe"],
-    )
-
+    )   
     trace.check_iterations(3)
     session["fit_card"] = create_fit_card(
         session["outfit_suggestion"],
@@ -191,7 +193,6 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     )
 
     return session
-
 
 
 # ── running it directly ───────────────────────────────────────────────────────
