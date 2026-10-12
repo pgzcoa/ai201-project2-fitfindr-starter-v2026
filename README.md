@@ -41,6 +41,29 @@
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
+FitFindr is an AI-powered outfit recommendation tool that helps users discover clothing listings and build outfits around items they find. It searches clothing listings using a description, optional size, and maximum price. When a matching item is found, FitFindr generates an outfit suggestion based on the selected item and the user's wardrobe, then creates a fit-card caption describing the item and its style.  The application uses three tools: `search_listings`, `suggest_outfit`, and `create_fit_card`. The agent stores its progress in a session dictionary so that search results, the selected item, outfit suggestions, and fit cards can be inspected and tested.
+
+## Planning Loop
+
+The planning loop is implemented in `agent.py::run_agent`.
+
+**Branch rule:** If the search returns no matching listings, the agent stores a helpful error message and stops before generating an outfit or fit card. Otherwise, it selects the first matching listing and continues through outfit generation and fit-card creation.
+
+The agent stores each tool's result in the session dictionary before using that result in the next step. This makes the workflow easier to inspect and test.
+
+When a search returns no matches, the agent suggests trying a different size, increasing the maximum price, or using different or broader search terms.
+
+## How I Used AI
+
+I used AI assistance to help implement, troubleshoot, and test the FitFindr tools and planning loop. I reviewed the generated code and ran commands in my local Python environment to check its behavior.
+
+**Moment 1 — Listing search and filtering:** I asked for help implementing `search_listings` so it could find relevant clothing listings and apply size and price filters. I tested a query for a graphic tee under $30 and an intentionally impossible search. I checked that the first query returned matching listings and the impossible query returned an empty list. I also refined the size matching logic to avoid treating similar size strings, such as `S` and `US 9`, as equivalent.
+
+**Moment 2 — Agent branching and session state:** I asked for help connecting the three tools in `agent.py::run_agent` and handling searches with no results. The initial placeholder stopped both test queries before the tools ran. I replaced it with query parsing, session-state updates, and a branch that returns a helpful message when the search results are empty. I then ran the agent again to verify that an unsuccessful search left `session["fit_card"]` as `None` and explained what the user could try next.
+
+I used terminal tests to check the behavior of the implementation and committed and pushed my changes to my GitHub fork.
+
+
 
 
 ---
