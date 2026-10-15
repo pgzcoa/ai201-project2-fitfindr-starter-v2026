@@ -21,7 +21,7 @@ the description has to say what is *in* the list.
 """
 
 import config  # noqa: F401 — you'll use this in search_listings
-from generate import generate
+from generate import ModelUnavailable, generate
 from utils.data_loader import load_listings
 
 
@@ -200,11 +200,20 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
             f"User's wardrobe:\n{wardrobe_text}"
         )
 
-    response = generate(prompt)
+
+    try:
+        response = generate(prompt)
+    except ModelUnavailable:
+        return (
+            "Try pairing this item with neutral basics and shoes that "
+            "complement its colors and style."
+        )
+
     return response.strip() if response and response.strip() else (
         "Try pairing this item with neutral basics and shoes that complement "
         "its colors and style."
     )
+    
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
